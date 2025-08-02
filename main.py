@@ -1,24 +1,47 @@
-import os
-from config.settings import get_langchain_api_key, LANGCHAIN_TRACING_V2, LANGCHAIN_ENDPOINT
-from services.chroma_client import get_chroma_client
-from services.embedding import get_embedding_function
-from data.documents import add_documents, query_documents
+from database import initialize_vector_database, store_embeddings, list_documents, delete_document
+from text_processing import extract_text_from_file, chunk_text, embed_chunks, embed_query
+from rag_operations import generate_answer_with_rag, search_vector_db
 
-# Set environment variables
-os.environ['LANGCHAIN_TRACING_V2'] = LANGCHAIN_TRACING_V2
-os.environ['LANGCHAIN_ENDPOINT'] = LANGCHAIN_ENDPOINT
-os.environ['LANGCHAIN_API_KEY'] = get_langchain_api_key()
+def main():
+    vector_db = initialize_vector_database()
 
-# Initialize ChromaDB client and collection
-chroma_client = get_chroma_client()
-collection = chroma_client.create_collection(
-    name="my_collection",
-    embedding_function=get_embedding_function()
-)
+    while True:
+        print("\n--- Student Knowledge Manager ---")
+        print("1. Import Document")
+        print("2. Ask a Question")
+        print("3. List Documents")
+        print("4. Delete Document")
+        print("5. Exit")
 
-# Add documents to the collection
-add_documents(collection)
+        choice = input("Choose an option: ")
 
-# Query the collection
-results = query_documents(collection, query_texts=["This is a document about pineapple"])
-print(results)
+        if choice == "1":
+            file_path = input("Enter file path: ")
+            text = extract_text_from_file(file_path)
+            chunks = chunk_text(text)
+            embeddings = embed_chunks(chunks)
+            store_embeddings(vector_db, embeddings, chunks, file_path)
+
+        elif choice == "2":
+            query = input("Enter your question: ")
+            query_embedding = embed_query(query)
+            results = search_vector_db(vector_db, query_embedding)
+            answer = generate_answer_with_rag(query, results)
+            print(f"\nAnswer:\n{answer}")
+
+        elif choice == "3":
+            list_documents(vector_db)
+
+        elif choice == "4":
+            doc_id = input("Enter document ID to delete: ")
+            delete_document(vector_db, doc_id)
+
+        elif choice == "5":
+            print("Exiting...")
+            break
+
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
