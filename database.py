@@ -1,12 +1,37 @@
-def initialize_vector_database():
-    print("Vector DB initialized (mock)")
-    return {}  # mock as dict or use a real DB later
+import chromadb
+from chromadb.api import ClientAPI
+from chromadb.config import Settings
+from chromadbx import UUIDGenerator
 
-def store_embeddings(db, embeddings, chunks, file_path):
+
+def initialize_vector_database():
+    chroma_client = chromadb.Client(settings=Settings(anonymized_telemetry=True))
+    chroma_client.get_or_create_collection(name="knowledge_rag")
+    return chroma_client
+
+
+def store_embeddings(db: ClientAPI, embeddings, chunks, file_path):
     print("Storing embeddings into vector DB...")
 
-def list_documents(db):
+    collection = db.get_or_create_collection(name="knowledge_rag")
+    collection.add(
+        ids=UUIDGenerator(len(chunks)),
+        embeddings=embeddings,
+        metadatas=[{"file": file_path}] * len(chunks),
+        documents=chunks,
+    )
+
+
+def list_documents(db: ClientAPI):
     print("Listing documents in vector DB...")
 
-def delete_document(db, doc_id):
+    collection = db.get_or_create_collection(name="knowledge_rag")
+    results = collection.get()
+    print(results)
+
+
+def delete_document(db: ClientAPI, doc_id):
     print(f"Deleting document with ID: {doc_id}")
+
+    collection = db.get_or_create_collection(name="knowledge_rag")
+    collection.delete(ids=doc_id)

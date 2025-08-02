@@ -1,15 +1,30 @@
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
+
+
 def extract_text_from_file(file_path):
-    print(f"Extracting text from {file_path}...")
-    return "Sample text content from file."
+    with open(file_path, "r") as file:
+        return file.read()
+
+
+text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=300, chunk_overlap=50
+)
+
 
 def chunk_text(text):
-    print("Chunking text...")
-    return ["Chunk 1 of text", "Chunk 2 of text"]
+    chunks = text_splitter.split_text(text=text)
+    return chunks
+
+
+embed_model = OllamaEmbeddingFunction(model_name="nomic-embed-text:latest")
+
 
 def embed_chunks(chunks):
-    print("Generating embeddings...")
-    return [[0.1, 0.2], [0.3, 0.4]]  # mock embeddings
+    embeddings = embed_model(chunks)
+    return embeddings
+
 
 def embed_query(query):
-    print("Embedding user query...")
-    return [0.5, 0.6]
+    embeddings = embed_model([query])
+    return embeddings[0]

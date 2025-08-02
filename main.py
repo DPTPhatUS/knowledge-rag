@@ -1,12 +1,23 @@
-from database import initialize_vector_database, store_embeddings, list_documents, delete_document
-from text_processing import extract_text_from_file, chunk_text, embed_chunks, embed_query
+from database import (
+    initialize_vector_database,
+    store_embeddings,
+    list_documents,
+    delete_document,
+)
+from text_processing import (
+    extract_text_from_file,
+    chunk_text,
+    embed_chunks,
+    embed_query,
+)
 from rag_operations import generate_answer_with_rag, search_vector_db
+
 
 def main():
     vector_db = initialize_vector_database()
 
     while True:
-        print("\n--- Student Knowledge Manager ---")
+        print("\n--- Knowledge RAG ---")
         print("1. Import Document")
         print("2. Ask a Question")
         print("3. List Documents")
@@ -42,6 +53,7 @@ def main():
 
         else:
             print("Invalid choice. Please try again.")
+
 
 if __name__ == "__main__":
     main()
