@@ -37,8 +37,11 @@ def main():
             query = input("Enter your question: ")
             query_embedding = embed_query(query)
             results = search_vector_db(vector_db, query_embedding)
-            answer = generate_answer_with_rag(query, results)
-            print(f"\nAnswer:\n{answer}")
+            answer_stream = generate_answer_with_rag(query, results)
+            print(f"\nAnswer: ", end="")
+            for chunk in answer_stream:
+                print(chunk.response, end="", flush=True)
+            print()
 
         elif choice == "3":
             list_documents(vector_db)

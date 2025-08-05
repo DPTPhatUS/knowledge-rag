@@ -1,7 +1,6 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 
-
 def extract_text_from_file(file_path):
     with open(file_path, "r") as file:
         return file.read()

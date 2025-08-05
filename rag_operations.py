@@ -11,7 +11,8 @@ Context:
 Question:
 {question}
 
-Answer:"""
+Answer:
+"""
 
 
 def generate_answer_with_rag(query, chunks):
@@ -19,8 +20,10 @@ def generate_answer_with_rag(query, chunks):
 
     context = "\n".join(chunks)
     formatted_prompt = prompt.format(context=context, question=query)
-    response = ollama.generate(model="qwen3:4b", prompt=formatted_prompt, think=False)
-    return response.response
+    response_stream = ollama.generate(
+        model="qwen3:4b", prompt=formatted_prompt, think=False, stream=True
+    )
+    return response_stream
 
 
 def search_vector_db(db: ClientAPI, query_embedding):
