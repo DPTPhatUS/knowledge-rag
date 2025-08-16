@@ -38,7 +38,7 @@ def main():
             query_embedding = embed_query(query)
             results = search_vector_db(vector_db, query_embedding)
             answer_stream = generate_answer_with_rag(query, results)
-            print(f"\nAnswer: ", end="")
+            print("\nAnswer: ", end="")
             for chunk in answer_stream:
                 print(chunk.response, end="", flush=True)
             print()
