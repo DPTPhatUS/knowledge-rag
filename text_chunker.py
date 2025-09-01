@@ -11,15 +11,17 @@ class TextChunker:
     def __call__(self, document: str) -> List[str]:
         pass
 
-    def _cosine_similarity(embed1: Embedding, embed2: Embedding):
+    def _cosine_similarity(self, embed1: Embedding, embed2: Embedding):
         embed1 = np.asarray(embed1)
         embed2 = np.asarray(embed2)
         return float(
             np.dot(embed1, embed2) / (np.linalg.norm(embed1) * np.linalg.norm(embed2))
         )
 
-    def _split_to_sentences(document: str) -> List[str]:
-        math_pattern = r"(\$.*?\$|\\\[.*?\\\]|\\begin\{equation\}.*?\\end\{equation\})"
+    def _split_to_sentences(self, document: str) -> List[str]:
+        math_pattern = (
+            r"(\$.*?\$|\\\[.*?\\\]|\\begin\{equation\}.*?\\end\{equation\}|\\\(.*?\\\))"
+        )
         parts = re.split(math_pattern, document, flags=re.DOTALL)
 
         sentences = []
@@ -61,6 +63,7 @@ class SemanticChunker(TextChunker):
         super().__init__()
         self.embed_func = embed_func
         self.threshold = threshold
+        self.max_chunk_length = max_chunk_length
 
     def __call__(self, document: str) -> List[str]:
         sentences = self._split_to_sentences(document)
