@@ -1,5 +1,5 @@
+from text_chunker import SemanticChunker
 from typing import List
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 import os
 from transformers import NougatProcessor, VisionEncoderDecoderModel
@@ -54,15 +54,6 @@ def extract_text_from_file(file_path: str) -> str:
         return file.read()
 
 
-text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-    chunk_size=300, chunk_overlap=50
-)
-
-
-def chunk_text(text: str) -> List[str]:
-    return text_splitter.split_text(text=text)
-
-
 _embed_model: OllamaEmbeddingFunction | None = None
 
 
@@ -71,6 +62,13 @@ def _get_embed_model() -> OllamaEmbeddingFunction:
     if _embed_model is None:
         _embed_model = OllamaEmbeddingFunction(model_name=OLLAMA_EMBED_MODEL)
     return _embed_model
+
+
+text_chunker = SemanticChunker(embed_func=_get_embed_model())
+
+
+def chunk_text(text: str) -> List[str]:
+    return text_chunker(document=text)
 
 
 def embed_chunks(chunks: List[str]):

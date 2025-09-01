@@ -52,10 +52,34 @@ class TextChunker:
 
 
 class SemanticChunker(TextChunker):
-    def __init__(self, embed_func: EmbeddingFunction, threshold: float = 0.75) -> None:
+    def __init__(
+        self,
+        embed_func: EmbeddingFunction,
+        threshold: float = 0.75,
+        max_chunk_length: int = 500,
+    ) -> None:
         super().__init__()
         self.embed_func = embed_func
         self.threshold = threshold
 
     def __call__(self, document: str) -> List[str]:
-        pass
+        sentences = self._split_to_sentences(document)
+        embeddings = self.embed_func(sentences)
+
+        chunks = []
+        i = 0
+        while i < len(sentences):
+            if (
+                i > 0
+                and chunks
+                and len(chunks[-1]) <= self.max_chunk_length
+                and self._cosine_similarity(embeddings[i - 1], embeddings[i])
+                > self.threshold
+            ):
+                chunks[-1] = chunks[-1] + sentences[i]
+            else:
+                chunks.append(sentences[i])
+
+            i += 1
+
+        return chunks
