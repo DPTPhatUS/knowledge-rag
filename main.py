@@ -82,7 +82,10 @@ def main():
 
         elif choice == "4":
             doc_id = input("Enter document ID to delete: ")
-            delete_document(vector_db, doc_id)
+            # delete_document(vector_db, doc_id)
+            
+            vector_db.delete(doc_id)
+            os.remove(f"{docs_path}/{doc_id}.txt")
 
         elif choice == "5":
             print("Exiting...")
