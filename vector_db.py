@@ -33,12 +33,17 @@ class VectorDB:
         self,
         embedding_dim: int = 512,
         metric: Literal["cosine", "euclid", "inner"] = "cosine",
-        file_path: str = COLLECTION_NAME + ".json",
+        storage_path: str = COLLECTION_NAME,
+        auto_save: bool = True
     ) -> None:
         self.embedding_dim = embedding_dim
         self.metric = metric
-        self.file_path = file_path
+        self.storage_path = storage_path
         self.database = Database(embedding_dim=embedding_dim)
+        self.auto_save = auto_save
+        
+        if auto_save:
+            self.load()
 
     def add(
         self, vector: np.ndarray, id: str, metadata: Dict[str, Any] | None = None
@@ -59,6 +64,9 @@ class VectorDB:
             [self.database.vectors_matrix, new_record.vector]
         )
         self.database.id_index_map[id] = len(self.database.records) - 1
+        
+        if self.auto_save:
+            self.save()
 
     def add_batch(
         self,
@@ -140,12 +148,13 @@ class VectorDB:
             ],
         }
 
-        with open(self.file_path, "w") as file:
+        file_path = self.storage_path + "/vectors.json"
+        with open(file_path, "w") as file:
             json.dump(save_data, file, indent=2)
 
     def load(self, file_path: str | None = None) -> None:
         if file_path is None:
-            file_path = self.file_path
+            file_path = self.storage_path + "/vectors.json"
 
         try:
             with open(file_path, "r") as file:

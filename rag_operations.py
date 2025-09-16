@@ -5,7 +5,7 @@ from globals import BASE_PROMPT, COLLECTION_NAME, OLLAMA_LLM_MODEL
 
 
 def generate_answer_with_rag(query: str, chunks: List[str]):
-    print("Generating answer using RAG...")
+    print("\nGenerating answer using RAG...")
 
     context = "\n".join(chunks)
     formatted_prompt = BASE_PROMPT.format(context=context, question=query)

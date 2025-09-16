@@ -57,7 +57,7 @@ class SemanticChunker(TextChunker):
     def __init__(
         self,
         embed_func: EmbeddingFunction,
-        threshold: float = 0.75,
+        threshold: float = 0.5,
         max_chunk_length: int = 500,
     ) -> None:
         super().__init__()
