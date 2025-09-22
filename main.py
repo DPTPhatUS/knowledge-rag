@@ -15,17 +15,20 @@ from vector_db import VectorDB
 import uuid
 from globals import COLLECTION_NAME
 import os
+from rag import KnowledgeRAG
 
 
 def main():
-    # storage_path = f"collections/{COLLECTION_NAME}"
-    storage_path = f"collections/text"
+    # # storage_path = f"collections/{COLLECTION_NAME}"
+    # storage_path = f"collections/text"
 
-    # vector_db = initialize_vector_database()
-    vector_db = VectorDB(embedding_dim=768, storage_path=storage_path, auto_save=True)
+    # # vector_db = initialize_vector_database()
+    # vector_db = VectorDB(embedding_dim=768, storage_path=storage_path, auto_save=True)
 
-    docs_path = f"{storage_path}/docs"
-    os.makedirs(docs_path, exist_ok=True)
+    # docs_path = f"{storage_path}/docs"
+    # os.makedirs(docs_path, exist_ok=True)
+    
+    knowledge_rag = KnowledgeRAG()
 
     while True:
         print("\n--- Knowledge RAG ---")
@@ -39,53 +42,61 @@ def main():
 
         if choice == "1":
             input_file_path = input("Enter file path: ")
-            text = extract_text_from_file(input_file_path)
-            chunks = chunk_text(text)
-            embeddings = embed_chunks(chunks)
-            # store_embeddings(vector_db, embeddings, chunks, file_path)
+            # text = extract_text_from_file(input_file_path)
+            # chunks = chunk_text(text)
+            # embeddings = embed_chunks(chunks)
+            # # store_embeddings(vector_db, embeddings, chunks, file_path)
 
-            chunk_ids = [str(uuid.uuid4()) for _ in range(len(chunks))]
-            chunk_metadatas = [{"file": input_file_path}] * len(chunks)
+            # chunk_ids = [str(uuid.uuid4()) for _ in range(len(chunks))]
+            # chunk_metadatas = [{"file": input_file_path}] * len(chunks)
 
-            vector_db.add_batch(embeddings, chunk_ids, chunk_metadatas)
+            # vector_db.add_batch(embeddings, chunk_ids, chunk_metadatas)
 
-            for id, chunk in zip(chunk_ids, chunks):
-                chunk_file_path = f"{docs_path}/{id}.txt"
-                with open(chunk_file_path, "w") as chunk_file:
-                    chunk_file.write(chunk)
+            # for id, chunk in zip(chunk_ids, chunks):
+            #     chunk_file_path = f"{docs_path}/{id}.txt"
+            #     with open(chunk_file_path, "w") as chunk_file:
+            #         chunk_file.write(chunk)
+            
+            knowledge_rag.add_document(input_file_path)
 
         elif choice == "2":
             query = input("Enter your question: ")
-            query_embedding = embed_query(query)
-            # results = search_vector_db(vector_db, query_embedding)
+            # query_embedding = embed_query(query)
+            # # results = search_vector_db(vector_db, query_embedding)
 
-            search_results = vector_db.search(query=query_embedding, top_k=5)
-            result_ids = [id for id, _ in search_results]
+            # search_results = vector_db.search(query=query_embedding, top_k=5)
+            # result_ids = [id for id, _ in search_results]
+
+            # def get_doc_from_id(doc_id: str) -> str:
+            #     doc_file_path = f"{docs_path}/{doc_id}.txt"
+            #     with open(doc_file_path, "r") as doc_file:
+            #         return doc_file.read()
+
+            # results = [get_doc_from_id(doc_id) for doc_id in result_ids]
+            # print("\nRetrieved documents: ", results)
+
+            # answer_stream = generate_answer_with_rag(query, results)
             
-            def get_doc_from_id(doc_id: str) -> str:
-                doc_file_path = f"{docs_path}/{doc_id}.txt"
-                with open(doc_file_path, "r") as doc_file:
-                    return doc_file.read()
-                    
-            results = [get_doc_from_id(doc_id) for doc_id in result_ids]
-            print("\nRetrieved documents: ", results)
-
-            answer_stream = generate_answer_with_rag(query, results)
+            answer_stream = knowledge_rag.answer_question(query=query)
             print("\nAnswer: ", end="")
             for chunk in answer_stream:
                 print(chunk.response, end="", flush=True)
             print()
 
         elif choice == "3":
-            # list_documents(vector_db)
-            print(len(vector_db))
+            # # list_documents(vector_db)
+            # print(len(vector_db))
+            
+            knowledge_rag.summary()
 
         elif choice == "4":
             doc_id = input("Enter document ID to delete: ")
-            # delete_document(vector_db, doc_id)
+            # # delete_document(vector_db, doc_id)
+
+            # vector_db.delete(doc_id)
+            # os.remove(f"{docs_path}/{doc_id}.txt")
             
-            vector_db.delete(doc_id)
-            os.remove(f"{docs_path}/{doc_id}.txt")
+            knowledge_rag.delete_document(document_id=doc_id)
 
         elif choice == "5":
             print("Exiting...")
