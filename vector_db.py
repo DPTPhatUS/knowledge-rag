@@ -34,14 +34,14 @@ class VectorDB:
         embedding_dim: int = 512,
         metric: Literal["cosine", "euclid", "inner"] = "cosine",
         storage_path: str = COLLECTION_NAME,
-        auto_save: bool = True
+        auto_save: bool = True,
     ) -> None:
         self.embedding_dim = embedding_dim
         self.metric = metric
         self.storage_path = storage_path
         self.database = Database(embedding_dim=embedding_dim)
         self.auto_save = auto_save
-        
+
         if auto_save:
             self.load()
 
@@ -64,7 +64,7 @@ class VectorDB:
             [self.database.vectors_matrix, new_record.vector]
         )
         self.database.id_index_map[id] = len(self.database.records) - 1
-        
+
         if self.auto_save:
             self.save()
 

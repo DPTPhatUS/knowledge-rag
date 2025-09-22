@@ -37,7 +37,9 @@ class KnowledgeRAG:
         self.device = device
 
         self.embedding_model = OllamaEmbeddingFunction(model_name=OLLAMA_EMBED_MODEL)
-        self.llm_model = partial(ollama.generate, model=OLLAMA_LLM_MODEL, keep_alive=False)
+        self.llm_model = partial(
+            ollama.generate, model=OLLAMA_LLM_MODEL, keep_alive=False
+        )
 
         self.chunker = SemanticChunker(
             embed_func=self.embedding_model, threshold=0.4, max_chunk_length=500
