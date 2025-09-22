@@ -11,6 +11,41 @@ class TextChunker:
     def __call__(self, document: str) -> List[str]:
         pass
 
+
+class SemanticChunker(TextChunker):
+    def __init__(
+        self,
+        embed_func: EmbeddingFunction,
+        threshold: float = 0.5,
+        max_chunk_length: int = 500,
+    ) -> None:
+        super().__init__()
+        self.embed_func = embed_func
+        self.threshold = threshold
+        self.max_chunk_length = max_chunk_length
+
+    def __call__(self, document: str) -> List[str]:
+        sentences = self._split_to_sentences(document)
+        embeddings = self.embed_func(sentences)
+
+        chunks = []
+        i = 0
+        while i < len(sentences):
+            if (
+                i > 0
+                and chunks
+                and len(chunks[-1]) <= self.max_chunk_length
+                and self._cosine_similarity(embeddings[i - 1], embeddings[i])
+                > self.threshold
+            ):
+                chunks[-1] = chunks[-1] + sentences[i]
+            else:
+                chunks.append(sentences[i])
+
+            i += 1
+
+        return chunks
+
     def _cosine_similarity(self, embed1: Embedding, embed2: Embedding):
         embed1 = np.asarray(embed1)
         embed2 = np.asarray(embed2)
@@ -51,38 +86,3 @@ class TextChunker:
             i += 1
 
         return merged_sentences
-
-
-class SemanticChunker(TextChunker):
-    def __init__(
-        self,
-        embed_func: EmbeddingFunction,
-        threshold: float = 0.5,
-        max_chunk_length: int = 500,
-    ) -> None:
-        super().__init__()
-        self.embed_func = embed_func
-        self.threshold = threshold
-        self.max_chunk_length = max_chunk_length
-
-    def __call__(self, document: str) -> List[str]:
-        sentences = self._split_to_sentences(document)
-        embeddings = self.embed_func(sentences)
-
-        chunks = []
-        i = 0
-        while i < len(sentences):
-            if (
-                i > 0
-                and chunks
-                and len(chunks[-1]) <= self.max_chunk_length
-                and self._cosine_similarity(embeddings[i - 1], embeddings[i])
-                > self.threshold
-            ):
-                chunks[-1] = chunks[-1] + sentences[i]
-            else:
-                chunks.append(sentences[i])
-
-            i += 1
-
-        return chunks

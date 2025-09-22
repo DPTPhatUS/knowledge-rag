@@ -42,7 +42,7 @@ class KnowledgeRAG:
         )
 
         self.chunker = SemanticChunker(
-            embed_func=self.embedding_model, threshold=0.4, max_chunk_length=500
+            embed_func=self.embedding_model, threshold=0.4, max_chunk_length=800
         )
 
     def add_document(self, file_path: str) -> None:
