@@ -10,6 +10,7 @@ import uuid
 import ollama
 from typing import Iterable
 from functools import partial
+from reranker import Reranker
 
 
 class KnowledgeRAG:
@@ -22,16 +23,9 @@ class KnowledgeRAG:
             else "mps" if torch.mps.is_available() else "cpu"
         ),
     ) -> None:
-        self.vector_db = VectorDB(
-            embedding_dim=768, storage_path=storage_path, auto_save=True
-        )
-
-        self.docs_path = f"{storage_path}/docs"
-        os.makedirs(self.docs_path, exist_ok=True)
-
-        self.ocr_processor = NougatProcessor.from_pretrained("facebook/nougat-small")
+        self.ocr_processor = NougatProcessor.from_pretrained(HUGGINGFACE_OCR_MODEL)
         self.ocr_model = VisionEncoderDecoderModel.from_pretrained(
-            "facebook/nougat-small"
+            HUGGINGFACE_OCR_MODEL
         )
         self.ocr_model.to(device)
         self.device = device
@@ -42,8 +36,17 @@ class KnowledgeRAG:
         )
 
         self.chunker = SemanticChunker(
-            embed_func=self.embedding_model, threshold=0.4, max_chunk_length=800
+            embed_func=self.embedding_model, threshold=0.5, max_chunk_size=800
         )
+        
+        self.reranker = Reranker(RERANK_MODEL)
+
+        self.vector_db = VectorDB(
+            embedding_dim=768, storage_path=storage_path, auto_save=True
+        )
+
+        self.docs_path = f"{storage_path}/docs"
+        os.makedirs(self.docs_path, exist_ok=True)
 
     def add_document(self, file_path: str) -> None:
         _, ext = os.path.splitext(file_path.lower())
@@ -95,7 +98,7 @@ class KnowledgeRAG:
     def answer_question(self, query: str) -> Iterable[ollama.GenerateResponse]:
         query_embedding = self.embedding_model([query])[0]
 
-        search_results = self.vector_db.search(query=query_embedding, top_k=5)
+        search_results = self.vector_db.search(query=query_embedding, top_k=20)
         results_ids = [id for id, _ in search_results]
 
         def _get_doc_from_id(doc_id: str):
@@ -104,6 +107,9 @@ class KnowledgeRAG:
                 return doc_file.read()
 
         results_docs = [_get_doc_from_id(id) for id in results_ids]
+        print(results_docs)
+        results_docs = self.reranker.rerank(results_docs, query=query, top_k=10)
+        print(results_docs)
 
         context = "\n".join(results_docs)
         prompt = BASE_PROMPT.format(context=context, question=query)

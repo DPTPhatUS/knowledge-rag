@@ -111,7 +111,7 @@ class VectorDB:
             top = np.argsort(-inners)[:top_k]
             return [(self.database.records[i].id, float(inners[i])) for i in top]
 
-        dists = np.linalg.norm(vectors - query)
+        dists = np.linalg.norm(vectors - query, axis=-1)
         top = np.argsort(dists)[:top_k]
         return [(self.database.records[i].id, float(dists[i])) for i in top]
 
@@ -149,8 +149,11 @@ class VectorDB:
         }
 
         file_path = self.storage_path + "/vectors.json"
-        with open(file_path, "w") as file:
-            json.dump(save_data, file, indent=2)
+        try:
+            with open(file_path, "w") as file:
+                json.dump(save_data, file, indent=2)
+        except FileNotFoundError as e:
+            print(f"Could not save database to {file_path}: {e}")
 
     def load(self, file_path: str | None = None) -> None:
         if file_path is None:
