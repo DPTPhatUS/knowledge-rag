@@ -39,7 +39,7 @@ class KnowledgeRAG:
             embed_func=self.embedding_model, threshold=0.5, max_chunk_size=800
         )
         
-        self.reranker = Reranker(RERANK_MODEL)
+        self.reranker = Reranker(RERANK_MODEL, device=device)
 
         self.vector_db = VectorDB(
             embedding_dim=768, storage_path=storage_path, auto_save=True
