@@ -8,7 +8,7 @@ def main():
         print("\n--- Knowledge RAG ---")
         print("1. Import Document")
         print("2. Ask a Question")
-        print("3. List Documents")
+        print("3. System Overview")
         print("4. Delete Document")
         print("5. Exit")
 
@@ -31,7 +31,7 @@ def main():
 
         elif choice == "4":
             delete_file_path = input("Enter file path: ")
-            knowledge_rag.delete_document(file_path=delete_file_path)
+            knowledge_rag.delete_document(delete_file_path)
 
         elif choice == "5":
             print("Exiting...")

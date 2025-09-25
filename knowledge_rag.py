@@ -8,7 +8,7 @@ from globals import *
 from text_chunker import SemanticChunker
 import uuid
 import ollama
-from typing import Iterable
+from typing import Iterable, Dict, Any
 from functools import partial
 from reranker import Reranker
 
@@ -36,7 +36,7 @@ class KnowledgeRAG:
         )
 
         self.chunker = SemanticChunker(
-            embed_func=self.embedding_model, threshold=0.5, max_chunk_size=800
+            embed_func=self.embedding_model, threshold=0.4, max_chunk_size=800
         )
 
         self.reranker = Reranker(RERANK_MODEL, device=device)
@@ -99,7 +99,7 @@ class KnowledgeRAG:
     def answer_question(self, query: str) -> Iterable[ollama.GenerateResponse]:
         query_embedding = self.embedding_model([query])[0]
 
-        search_results = self.vector_db.search(query=query_embedding, top_k=20)
+        search_results = self.vector_db.search(query=query_embedding, top_k=10)
         results_ids = [id for id, _ in search_results]
 
         def _get_doc_from_id(doc_id: str):
@@ -109,7 +109,7 @@ class KnowledgeRAG:
 
         results_docs = [_get_doc_from_id(id) for id in results_ids]
         print(results_docs)
-        results_docs = self.reranker.rerank(results_docs, query=query, top_k=10)
+        results_docs = self.reranker.rerank(results_docs, query=query, top_k=5)
         print(results_docs)
 
         context = "\n".join(results_docs)
@@ -117,5 +117,107 @@ class KnowledgeRAG:
 
         return self.llm_model(prompt=prompt, think=False, stream=True)
 
-    def summary(self):
-        pass
+    def summary(self) -> Dict[str, Any]:
+        records = self.vector_db.get()
+        num_chunks = len(records)
+
+        file_to_ids: dict[str, list[str]] = {}
+        unknown_ids: list[str] = []
+        for rec in records:
+            src = rec.metadata.get("file") if isinstance(rec.metadata, dict) else None
+            if src:
+                file_to_ids.setdefault(src, []).append(rec.id)
+            else:
+                unknown_ids.append(rec.id)
+
+        distinct_docs = list(file_to_ids.keys())
+        num_documents = len(distinct_docs)
+
+        try:
+            doc_files = [f for f in os.listdir(self.docs_path) if f.endswith(".txt")]
+        except FileNotFoundError:
+            doc_files = []
+
+        disk_chunk_ids = {os.path.splitext(f)[0] for f in doc_files}
+        db_chunk_ids = {rec.id for rec in records}
+        orphan_on_disk = sorted(list(disk_chunk_ids - db_chunk_ids))
+        missing_on_disk = sorted(list(db_chunk_ids - disk_chunk_ids))
+
+        print("\n=== Knowledge RAG Summary ===")
+        print(f"Device: {self.device}")
+        print("Models:")
+        print(f"  - OCR: {HUGGINGFACE_OCR_MODEL}")
+        print(f"  - Embeddings: {OLLAMA_EMBED_MODEL}")
+        print(f"  - LLM: {OLLAMA_LLM_MODEL}")
+        print(f"  - Reranker: {RERANK_MODEL}")
+
+        print("Vector DB:")
+        print(f"  - Embedding dim: {self.vector_db.embedding_dim}")
+        print(f"  - Metric: {self.vector_db.metric}")
+        print(f"  - Storage path: {self.vector_db.storage_path}")
+        print(f"  - Collection file: {self.vector_db.storage_path}/vectors.json")
+        print(f"  - Total chunks: {num_chunks}")
+        print(f"  - Distinct documents: {num_documents}")
+
+        if hasattr(self, "chunker"):
+            print("Chunker:")
+            print(f"  - Type: {type(self.chunker).__name__}")
+            if hasattr(self.chunker, "threshold"):
+                print(f"  - Threshold: {self.chunker.threshold}")
+            if hasattr(self.chunker, "max_chunk_size"):
+                print(f"  - Max chunk size: {self.chunker.max_chunk_size}")
+
+        if num_documents:
+            print("Documents (up to 10 shown):")
+            for i, (file_path, ids) in enumerate(sorted(file_to_ids.items())[:10], 1):
+                print(f"  {i}. {file_path} -> {len(ids)} chunks")
+            remaining = num_documents - min(10, num_documents)
+            if remaining > 0:
+                print(f"  ... and {remaining} more")
+        else:
+            print("Documents: none imported yet")
+
+        print("Consistency checks:")
+        print(f"  - Chunk files directory: {self.docs_path}")
+        print(f"  - Chunk files on disk: {len(doc_files)}")
+        if orphan_on_disk:
+            print(
+                f"  - Orphan chunk files on disk (no DB entry): {len(orphan_on_disk)}"
+            )
+        if missing_on_disk:
+            print(
+                f"  - Missing chunk files (in DB, not on disk): {len(missing_on_disk)}"
+            )
+
+        return {
+            "device": self.device,
+            "models": {
+                "ocr": HUGGINGFACE_OCR_MODEL,
+                "embedding": OLLAMA_EMBED_MODEL,
+                "llm": OLLAMA_LLM_MODEL,
+                "reranker": RERANK_MODEL,
+            },
+            "vector_db": {
+                "embedding_dim": self.vector_db.embedding_dim,
+                "metric": self.vector_db.metric,
+                "storage_path": self.vector_db.storage_path,
+                "collection_file": f"{self.vector_db.storage_path}/vectors.json",
+                "num_chunks": num_chunks,
+                "num_documents": num_documents,
+            },
+            "chunker": {
+                "type": type(self.chunker).__name__,
+                "threshold": getattr(self.chunker, "threshold", None),
+                "max_chunk_size": getattr(self.chunker, "max_chunk_size", None),
+            },
+            "documents": {
+                "by_file": {k: len(v) for k, v in file_to_ids.items()},
+                "unknown_chunk_ids": unknown_ids,
+            },
+            "files": {
+                "docs_path": self.docs_path,
+                "chunks_on_disk": len(doc_files),
+                "orphan_chunk_files": orphan_on_disk,
+                "missing_chunk_files": missing_on_disk,
+            },
+        }
