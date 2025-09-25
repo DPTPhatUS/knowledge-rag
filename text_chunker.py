@@ -159,7 +159,7 @@ class SemanticChunker(TextChunker):
                 and merged_sentences
                 and not merged_sentences[-1].rstrip().endswith((".", "?", "!"))
             ):
-                merged_sentences[-1] = merged_sentences[-1] + current
+                merged_sentences[-1] = merged_sentences[-1] + " " + current
             else:
                 merged_sentences.append(current)
 
