@@ -46,7 +46,11 @@ class VectorDB:
             self.load()
 
     def add(
-        self, vector: np.ndarray, id: str, metadata: Dict[str, Any] | None = None
+        self,
+        vector: np.ndarray,
+        id: str,
+        metadata: Dict[str, Any] | None = None,
+        auto_save: bool | None = None,
     ) -> None:
         if id in self.database.id_index_map:
             raise ValueError(f"Duplicate ID found: {id}")
@@ -65,7 +69,9 @@ class VectorDB:
         )
         self.database.id_index_map[id] = len(self.database.records) - 1
 
-        if self.auto_save:
+        if auto_save is None:
+            auto_save = self.auto_save
+        if auto_save:
             self.save()
 
     def add_batch(
@@ -73,12 +79,18 @@ class VectorDB:
         vectors: List[np.ndarray],
         ids: List[str],
         metadatas: List[Dict[str, Any] | None] | None = None,
+        auto_save: bool | None = None,
     ) -> None:
         if metadatas is None:
             metadatas = [{}] * len(vectors)
 
         for vec, id, meta in zip(vectors, ids, metadatas):
-            self.add(vector=vec, id=id, metadata=meta)
+            self.add(vector=vec, id=id, metadata=meta, auto_save=False)
+
+        if auto_save is None:
+            auto_save = self.auto_save
+        if auto_save:
+            self.save()
 
     def search(
         self,
@@ -115,12 +127,26 @@ class VectorDB:
         top = np.argsort(dists)[:top_k]
         return [(self.database.records[i].id, float(dists[i])) for i in top]
 
-    def get(self, id: str) -> Optional[Record]:
-        idx = self.database.id_index_map[id]
-        if idx is None:
-            return None
+    def get(
+        self, ids: List[str] | None, metadata_filter: Dict[str, Any] | None
+    ) -> List[Record]:
+        records = []
+        if ids is not None:
+            for id in ids:
+                idx = self.database.id_index_map[id]
+                if idx is not None:
+                    records.append(self.database.records[idx])
+        else:
+            records = self.database.records
 
-        return self.database.records[idx]
+        if metadata_filter is None:
+            return records
+        else:
+            return [
+                rec
+                for rec in records
+                if metadata_filter.items() <= rec.metadata.items()
+            ]
 
     def delete(self, id: str) -> None:
         idx = self.database.id_index_map.pop(id)
