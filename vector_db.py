@@ -148,18 +148,34 @@ class VectorDB:
                 if metadata_filter.items() <= rec.metadata.items()
             ]
 
-    def delete(self, id: str) -> None:
-        idx = self.database.id_index_map.pop(id)
-        if idx is None:
-            return
+    def delete(
+        self,
+        ids: List[str] | None,
+        metadata_filter: Dict[str, Any] | None,
+        auto_save: bool | None = None,
+    ) -> List[str]:
+        records_to_delete = self.get(ids, metadata_filter)
+        ids_to_delete = [record.id for record in records_to_delete]
+        indices_to_delete = [self.database.id_index_map.pop(id) for id in ids_to_delete]
 
-        self.database.records.pop(idx)
+        self.database.records = [
+            record
+            for idx, record in enumerate(self.database.records)
+            if idx not in indices_to_delete
+        ]
         self.database.vectors_matrix = np.delete(
-            self.database.vectors_matrix, idx, axis=0
+            self.database.vectors_matrix, indices_to_delete, axis=0
         )
         self.database.id_index_map = {
             rec.id: i for i, rec in enumerate(self.database.records)
         }
+
+        if auto_save is None:
+            auto_save = self.auto_save
+        if auto_save:
+            self.save()
+
+        return ids_to_delete
 
     def __len__(self) -> int:
         return len(self.database.records)

@@ -30,8 +30,8 @@ def main():
             knowledge_rag.summary()
 
         elif choice == "4":
-            doc_id = input("Enter document ID to delete: ")
-            knowledge_rag.delete_document(document_id=doc_id)
+            delete_file_path = input("Enter file path: ")
+            knowledge_rag.delete_document(file_path=delete_file_path)
 
         elif choice == "5":
             print("Exiting...")

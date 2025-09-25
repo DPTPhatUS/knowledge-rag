@@ -38,7 +38,7 @@ class KnowledgeRAG:
         self.chunker = SemanticChunker(
             embed_func=self.embedding_model, threshold=0.5, max_chunk_size=800
         )
-        
+
         self.reranker = Reranker(RERANK_MODEL, device=device)
 
         self.vector_db = VectorDB(
@@ -91,9 +91,10 @@ class KnowledgeRAG:
             with open(chunk_file_path, "w") as chunk_file:
                 chunk_file.write(chunk)
 
-    def delete_document(self, document_id: str) -> None:
-        self.vector_db.delete(id=document_id)
-        os.remove(f"{self.docs_path}/{document_id}.txt")
+    def delete_document(self, file_path: str) -> None:
+        ids_to_delete = self.vector_db.delete(metadata_filter={"file": file_path})
+        for doc_id in ids_to_delete:
+            os.remove(f"{self.docs_path}/{doc_id}.txt")
 
     def answer_question(self, query: str) -> Iterable[ollama.GenerateResponse]:
         query_embedding = self.embedding_model([query])[0]
