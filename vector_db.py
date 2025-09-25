@@ -128,7 +128,9 @@ class VectorDB:
         return [(self.database.records[i].id, float(dists[i])) for i in top]
 
     def get(
-        self, ids: List[str] | None, metadata_filter: Dict[str, Any] | None
+        self,
+        ids: List[str] | None = None,
+        metadata_filter: Dict[str, Any] | None = None,
     ) -> List[Record]:
         records = []
         if ids is not None:
@@ -150,8 +152,8 @@ class VectorDB:
 
     def delete(
         self,
-        ids: List[str] | None,
-        metadata_filter: Dict[str, Any] | None,
+        ids: List[str] | None = None,
+        metadata_filter: Dict[str, Any] | None = None,
         auto_save: bool | None = None,
     ) -> List[str]:
         records_to_delete = self.get(ids, metadata_filter)
