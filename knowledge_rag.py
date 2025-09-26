@@ -11,6 +11,7 @@ import ollama
 from typing import Iterable, Dict, Any
 from functools import partial
 from reranker import Reranker
+from datetime import datetime
 
 
 class KnowledgeRAG:
@@ -81,7 +82,13 @@ class KnowledgeRAG:
 
         chunks = self.chunker(file_content)
         chunk_ids = [str(uuid.uuid4()) for _ in range(len(chunks))]
-        chunk_metadatas = [{"file": file_path}] * len(chunks)
+        chunk_metadatas = [
+            {
+                "file": file_path,
+                "date": datetime.now().date(),
+                "time": datetime.now().time(),
+            }
+        ] * len(chunks)
         embeddings = self.embedding_model(chunks)
 
         self.vector_db.add_batch(embeddings, chunk_ids, chunk_metadatas)
