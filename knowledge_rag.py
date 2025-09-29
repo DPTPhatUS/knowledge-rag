@@ -103,11 +103,20 @@ class KnowledgeRAG:
         for doc_id in ids_to_delete:
             os.remove(f"{self.docs_path}/{doc_id}.txt")
 
-    def answer_question(self, query: str) -> Iterable[ollama.GenerateResponse]:
-        query_embedding = self.embedding_model([query])[0]
+    def answer_question(self, query: str) -> str:
+        rewrite_prompt = MULTI_QUERY_PROMPT.format(question=query)
+        queries = self.llm_model(
+            prompt=rewrite_prompt, think=False, stream=False
+        ).response.split("\n")
+        print("\n", queries)
+        queries_embeddings = self.embedding_model(queries)
 
-        search_results = self.vector_db.search(query=query_embedding, top_k=10)
-        results_ids = [id for id, _ in search_results]
+        search_results = []
+        for query_embedding in queries_embeddings:
+            search_results.extend(
+                self.vector_db.search(query=query_embedding, top_k=10)
+            )
+        results_ids = {id for id, _ in search_results}
 
         def _get_doc_from_id(doc_id: str):
             doc_file_path = f"{self.docs_path}/{doc_id}.txt"
@@ -115,14 +124,14 @@ class KnowledgeRAG:
                 return doc_file.read()
 
         results_docs = [_get_doc_from_id(id) for id in results_ids]
-        print(results_docs)
-        results_docs = self.reranker.rerank(results_docs, query=query, top_k=5)
-        print(results_docs)
+        print("\n", results_docs, "\n")
+        results_docs = self.reranker.rerank(results_docs, query=query, top_k=10)
+        print("\n", results_docs)
 
         context = "\n".join(results_docs)
         prompt = BASE_PROMPT.format(context=context, question=query)
 
-        return self.llm_model(prompt=prompt, think=False, stream=True)
+        return self.llm_model(prompt=prompt, think=False, stream=False).response
 
     def summary(self) -> Dict[str, Any]:
         records = self.vector_db.get()

@@ -20,11 +20,8 @@ def main():
 
         elif choice == "2":
             query = input("Enter your question: ")
-            answer_stream = knowledge_rag.answer_question(query=query)
-            print("\nAnswer: ", end="")
-            for chunk in answer_stream:
-                print(chunk.response, end="", flush=True)
-            print()
+            answer = knowledge_rag.answer_question(query=query)
+            print("\nAnswer: ", answer)
 
         elif choice == "3":
             knowledge_rag.summary()
