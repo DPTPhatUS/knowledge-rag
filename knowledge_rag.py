@@ -85,8 +85,8 @@ class KnowledgeRAG:
         chunk_metadatas = [
             {
                 "file": file_path,
-                "date": datetime.now().date(),
-                "time": datetime.now().time(),
+                "date": datetime.now().date().isoformat(),
+                "time": datetime.now().time().isoformat(timespec="seconds"),
             }
         ] * len(chunks)
         embeddings = self.embedding_model(chunks)
