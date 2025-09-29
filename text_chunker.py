@@ -120,7 +120,7 @@ class SemanticChunker(TextChunker):
                 and self._cosine_similarity(embeddings[i - 1], embeddings[i])
                 > self.threshold
             ):
-                chunks[-1] = chunks[-1] + sentences[i]
+                chunks[-1] = chunks[-1] + " " + sentences[i]
             else:
                 chunks.append(sentences[i])
             i += 1

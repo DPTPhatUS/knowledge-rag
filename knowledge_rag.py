@@ -37,7 +37,7 @@ class KnowledgeRAG:
         )
 
         self.chunker = SemanticChunker(
-            embed_func=self.embedding_model, threshold=0.4, max_chunk_size=800
+            embed_func=self.embedding_model, threshold=0.4, max_chunk_size=500
         )
 
         self.reranker = Reranker(RERANK_MODEL, device=device)
