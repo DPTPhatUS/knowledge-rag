@@ -46,7 +46,7 @@ class KnowledgeRAG:
             embedding_dim=768, storage_path=f"{storage_path}/text", auto_save=True
         )
 
-        self.docs_path = f"{storage_path}/docs"
+        self.docs_path = f"{storage_path}/text/docs"
         os.makedirs(self.docs_path, exist_ok=True)
 
     def add_document(self, file_path: str) -> None:
