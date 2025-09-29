@@ -17,7 +17,7 @@ from datetime import datetime
 class KnowledgeRAG:
     def __init__(
         self,
-        storage_path: str | None = "collections/text",
+        storage_path: str | None = "collections",
         device: str | None = (
             "cuda"
             if torch.cuda.is_available()
@@ -43,7 +43,7 @@ class KnowledgeRAG:
         self.reranker = Reranker(RERANK_MODEL, device=device)
 
         self.vector_db = VectorDB(
-            embedding_dim=768, storage_path=storage_path, auto_save=True
+            embedding_dim=768, storage_path=f"{storage_path}/text", auto_save=True
         )
 
         self.docs_path = f"{storage_path}/docs"
