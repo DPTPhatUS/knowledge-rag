@@ -114,7 +114,7 @@ class KnowledgeRAG:
         search_results = []
         for query_embedding in queries_embeddings:
             search_results.extend(
-                self.vector_db.search(query=query_embedding, top_k=10)
+                self.vector_db.search(query=query_embedding, top_k=16)
             )
         results_ids = {id for id, _ in search_results}
 
@@ -125,7 +125,7 @@ class KnowledgeRAG:
 
         results_docs = [_get_doc_from_id(id) for id in results_ids]
         print("\n", results_docs, "\n")
-        results_docs = self.reranker.rerank(results_docs, query=query, top_k=10)
+        results_docs = self.reranker.rerank(results_docs, query=query, top_k=8)
         print("\n", results_docs)
 
         context = "\n".join(results_docs)
