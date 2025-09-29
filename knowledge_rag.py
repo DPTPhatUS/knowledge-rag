@@ -3,12 +3,12 @@ from vector_db import VectorDB
 from transformers import VisionEncoderDecoderModel, NougatProcessor
 import torch
 from pdf2image import convert_from_path
-from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
+from embedder import OllamaEmbedder
 from globals import *
 from text_chunker import SemanticChunker
 import uuid
 import ollama
-from typing import Iterable, Dict, Any
+from typing import Dict, Any
 from functools import partial
 from reranker import Reranker
 from datetime import datetime
@@ -31,13 +31,13 @@ class KnowledgeRAG:
         self.ocr_model.to(device)
         self.device = device
 
-        self.embedding_model = OllamaEmbeddingFunction(model_name=OLLAMA_EMBED_MODEL)
+        self.embedder = OllamaEmbedder(model_name=OLLAMA_EMBED_MODEL)
         self.llm_model = partial(
             ollama.generate, model=OLLAMA_LLM_MODEL, keep_alive=False
         )
 
         self.chunker = SemanticChunker(
-            embed_func=self.embedding_model, threshold=0.4, max_chunk_size=500
+            embed_func=self.embedder, threshold=0.4, max_chunk_size=500
         )
 
         self.reranker = Reranker(RERANK_MODEL, device=device)
@@ -89,7 +89,7 @@ class KnowledgeRAG:
                 "time": datetime.now().time().isoformat(timespec="seconds"),
             }
         ] * len(chunks)
-        embeddings = self.embedding_model(chunks)
+        embeddings = self.embedder(chunks)
 
         self.vector_db.add_batch(embeddings, chunk_ids, chunk_metadatas)
 
@@ -109,7 +109,7 @@ class KnowledgeRAG:
             prompt=rewrite_prompt, think=False, stream=False
         ).response.split("\n")
         print("\n", queries)
-        queries_embeddings = self.embedding_model(queries)
+        queries_embeddings = self.embedder(queries)
 
         search_results = []
         for query_embedding in queries_embeddings:

@@ -21,7 +21,8 @@ def main():
         elif choice == "2":
             query = input("Enter your question: ")
             answer = knowledge_rag.answer_question(query=query)
-            print("\nAnswer: ", answer)
+            print("\nAnswer: ", end="")
+            print(answer)
 
         elif choice == "3":
             knowledge_rag.summary()

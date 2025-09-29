@@ -1,8 +1,7 @@
-from typing import List
+from typing import List, Callable
 import re
 import numpy as np
-from chromadb.api.types import Embedding, EmbeddingFunction
-from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
+from embedder import Embedding, OllamaEmbedder
 from globals import OLLAMA_EMBED_MODEL
 
 
@@ -97,7 +96,7 @@ class RecursiveChunker(TextChunker):
 class SemanticChunker(TextChunker):
     def __init__(
         self,
-        embed_func: EmbeddingFunction,
+        embed_func: Callable[[List[str]], List[Embedding]],
         threshold: float = 0.5,
         max_chunk_size: int = 500,
     ) -> None:
@@ -181,7 +180,7 @@ if __name__ == "__main__":
     \]
     are also included."""
 
-    embed_func = OllamaEmbeddingFunction(model_name=OLLAMA_EMBED_MODEL)
+    embed_func = OllamaEmbedder(model_name=OLLAMA_EMBED_MODEL)
 
     fixed_chunker = FixedChunker(chunk_size=100, overlap=20)
     recursive_chunker = RecursiveChunker(chunk_size=100, overlap=20)

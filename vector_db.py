@@ -1,5 +1,5 @@
 import json
-from typing import Any, List, Literal, Dict, Optional, Tuple
+from typing import Any, List, Literal, Dict, Tuple
 from globals import COLLECTION_NAME
 import numpy as np
 from dataclasses import dataclass, field
